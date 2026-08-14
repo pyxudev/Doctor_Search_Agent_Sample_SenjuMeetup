@@ -1,0 +1,77 @@
+services:
+  # One-shot: validate → normalize → load sample JSON into SQLite and set indexes
+  ingest:
+    build: .
+    container_name: healthcare-ingest
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: sqlite:////app/data/healthcare.db
+      JSON_DATA_DIR: /app/data/json
+      JSON_WATCH_DIR: /app/data/json/incoming
+      SAMPLE_DATA_PATH: /app/data/json/sample_doctors.json
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./src:/app/src
+    working_dir: /app
+    entrypoint: ["python", "-m", "src.batches.ingest_json"]
+    command: ["--source", "/app/data/json/sample_doctors.json", "--init-db"]
+    networks:
+      - healthcare-net
+    restart: "no"
+
+  # Watches data/json/incoming for new/updated JSON and auto-updates the DB
+  db-updater:
+    build: .
+    container_name: healthcare-db-updater
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: sqlite:////app/data/healthcare.db
+      JSON_DATA_DIR: /app/data/json
+      JSON_WATCH_DIR: /app/data/json/incoming
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./src:/app/src
+    working_dir: /app
+    entrypoint: ["python", "-m", "src.batches.update_db"]
+    command: ["--watch", "--dir", "/app/data/json/incoming"]
+    depends_on:
+      ingest:
+        condition: service_completed_successfully
+    networks:
+      - healthcare-net
+    restart: unless-stopped
+
+  # Interactive CLI agent
+  agent:
+    build: .
+    container_name: healthcare-agent
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: sqlite:////app/data/healthcare.db
+      JSON_DATA_DIR: /app/data/json
+      JSON_WATCH_DIR: /app/data/json/incoming
+      SAMPLE_DATA_PATH: /app/data/json/sample_doctors.json
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./src:/app/src
+    stdin_open: true
+    tty: true
+    working_dir: /app
+    entrypoint: ["python", "-m", "src.agent.cli"]
+    depends_on:
+      ingest:
+        condition: service_completed_successfully
+      db-updater:
+        condition: service_started
+    networks:
+      - healthcare-net
+
+networks:
+  healthcare-net:
+    driver: bridge

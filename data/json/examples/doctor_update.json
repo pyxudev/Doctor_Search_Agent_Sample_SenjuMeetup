@@ -1,0 +1,26 @@
+{
+  "doctors": [
+    {
+      "name": "Dr. Leo Park",
+      "gender": "male",
+      "age": 39,
+      "expertise": "Dermatology",
+      "hospital": "Tokyo Central Medical Center",
+      "region": "Tokyo",
+      "language": "Japanese, English, Korean",
+      "internal_number": "D-1007",
+      "rating": 4.6,
+      "score": 88,
+      "personality": "friendly",
+      "available_slots": [
+        "2026-08-05 10:00",
+        "2026-08-06 14:00",
+        "2026-08-07 09:00"
+      ],
+      "register_date": "2026-08-01"
+    }
+  ],
+  "aliases": [
+    {"keyword": "Dermatology", "alias": "rash specialist"}
+  ]
+}
