@@ -47,6 +47,8 @@ services:
 
   # Interactive CLI agent
   agent:
+    profiles:
+      - agent
     build: .
     container_name: healthcare-agent
     env_file:
